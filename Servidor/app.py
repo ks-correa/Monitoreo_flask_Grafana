@@ -1,6 +1,5 @@
 import argparse, os, time, threading
 from datetime import datetime
-from html import escape
 from flask import Flask, jsonify, request, render_template_string
 from metrics import instrumentar
 
@@ -30,21 +29,7 @@ def headers(resp):
 
 @app.get('/')
 def index():
-    if request.accept_mimetypes.best != 'text/html':
-        return jsonify(info())
-    # Muestra datos identificables en la página HTML sin depender de otra petición.
-    fecha = datetime.now().astimezone().isoformat(timespec='seconds')
-    contenido = (
-        '<p>Esta aplicación se ejecuta en tres instancias Flask detrás de NGINX.</p>'
-        f'<p><strong>Servidor:</strong> {escape(args.id)}'
-        f' | <strong>Fecha y hora:</strong> {fecha}'
-        ' | <strong>Estado:</strong> ok</p>'
-        '<p><strong>Mensaje:</strong> Instancia Flask operativa.</p>'
-        '<button onclick="estado()">Consultar instancia</button>'
-        '<pre id="out">Pulsa el botón.</pre>'
-    )
-    js = """async function estado(){let r=await fetch('/api/estado',{cache:'no-store'});document.getElementById('out').textContent=JSON.stringify(await r.json(),null,2)} estado();"""
-    return page('Inicio', contenido, js)
+    return jsonify(nodo=args.id, **info())
 
 @app.get('/api/estado')
 def estado():return jsonify(info())

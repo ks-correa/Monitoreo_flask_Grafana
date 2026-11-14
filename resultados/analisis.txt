@@ -1,0 +1,189 @@
+﻿
+Escenario: resultados/normal.csv
+{
+  "total": 90,
+  "exitosas": 90,
+  "errores_http": 0,
+  "disponibilidad_observada_pct": 100.0,
+  "errores_conexion": 0,
+  "errores": 0,
+  "distribucion": {
+    "S1": 30,
+    "S2": 30,
+    "S3": 30
+  },
+  "latencia_promedio_ms": 9.064,
+  "p95_ms": 25.356,
+  "duracion_s": 0.819,
+  "throughput_rps": 109.933
+}
+
+Escenario: resultados/rps12.csv
+{
+  "total": 720,
+  "exitosas": 720,
+  "errores_http": 0,
+  "disponibilidad_observada_pct": 100.0,
+  "errores_conexion": 0,
+  "errores": 0,
+  "distribucion": {
+    "S3": 240,
+    "S1": 240,
+    "S2": 240
+  },
+  "latencia_promedio_ms": 56.492,
+  "p95_ms": 69.301,
+  "duracion_s": 60.206,
+  "throughput_rps": 11.959
+}
+
+Escenario: resultados/fallo.csv
+{
+  "total": 90,
+  "exitosas": 90,
+  "errores_http": 0,
+  "disponibilidad_observada_pct": 100.0,
+  "errores_conexion": 0,
+  "errores": 0,
+  "distribucion": {
+    "S3": 46,
+    "S2": 44
+  },
+  "latencia_promedio_ms": 7.541,
+  "p95_ms": 23.784,
+  "duracion_s": 0.682,
+  "throughput_rps": 132.006
+}
+
+Escenario: resultados/recuperacion.csv
+{
+  "total": 90,
+  "exitosas": 90,
+  "errores_http": 0,
+  "disponibilidad_observada_pct": 100.0,
+  "errores_conexion": 0,
+  "errores": 0,
+  "distribucion": {
+    "S2": 31,
+    "S3": 30,
+    "S1": 29
+  },
+  "latencia_promedio_ms": 9.006,
+  "p95_ms": 24.583,
+  "duracion_s": 0.813,
+  "throughput_rps": 110.673
+}
+
+Escenario: resultados/disponibilidad.csv
+{
+  "total": 90,
+  "exitosas": 90,
+  "errores_http": 0,
+  "disponibilidad_observada_pct": 100.0,
+  "errores_conexion": 0,
+  "errores": 0,
+  "distribucion": {
+    "S1": 26,
+    "S2": 33,
+    "S3": 31
+  },
+  "latencia_promedio_ms": 21.288,
+  "p95_ms": 26.202,
+  "duracion_s": 89.037,
+  "throughput_rps": 1.011
+}
+
+Escenario: resultados/latencia50.csv
+{
+  "total": 100,
+  "exitosas": 100,
+  "errores_http": 0,
+  "disponibilidad_observada_pct": 100.0,
+  "errores_conexion": 0,
+  "errores": 0,
+  "distribucion": {
+    "S1": 34,
+    "S2": 33,
+    "S3": 33
+  },
+  "latencia_promedio_ms": 57.945,
+  "p95_ms": 65.132,
+  "duracion_s": 0.593,
+  "throughput_rps": 168.597
+}
+
+Escenario: resultados/latencia200.csv
+{
+  "total": 100,
+  "exitosas": 100,
+  "errores_http": 0,
+  "disponibilidad_observada_pct": 100.0,
+  "errores_conexion": 0,
+  "errores": 0,
+  "distribucion": {
+    "S1": 33,
+    "S3": 33,
+    "S2": 34
+  },
+  "latencia_promedio_ms": 208.274,
+  "p95_ms": 212.473,
+  "duracion_s": 2.091,
+  "throughput_rps": 47.821
+}
+
+Escenario: resultados/hilos1.csv
+{
+  "total": 100,
+  "exitosas": 100,
+  "errores_http": 0,
+  "disponibilidad_observada_pct": 100.0,
+  "errores_conexion": 0,
+  "errores": 0,
+  "distribucion": {
+    "S3": 34,
+    "S1": 33,
+    "S2": 33
+  },
+  "latencia_promedio_ms": 57.925,
+  "p95_ms": 73.345,
+  "duracion_s": 5.796,
+  "throughput_rps": 17.253
+}
+
+Escenario: resultados/hilos20.csv
+{
+  "total": 100,
+  "exitosas": 100,
+  "errores_http": 0,
+  "disponibilidad_observada_pct": 100.0,
+  "errores_conexion": 0,
+  "errores": 0,
+  "distribucion": {
+    "S1": 34,
+    "S2": 33,
+    "S3": 33
+  },
+  "latencia_promedio_ms": 58.727,
+  "p95_ms": 68.519,
+  "duracion_s": 0.325,
+  "throughput_rps": 307.552
+}
+
+Escenario: resultados/errores.csv
+{
+  "total": 20,
+  "exitosas": 0,
+  "errores_http": 20,
+  "disponibilidad_observada_pct": 0.0,
+  "errores_conexion": 0,
+  "errores": 20,
+  "distribucion": {
+    "S2": 7,
+    "S3": 7,
+    "S1": 6
+  },
+  "latencia_promedio_ms": 5.551,
+  "p95_ms": 9.875,
+  "duracion_s": 0.027,
+  "throughput_rps": 744.027
+}

@@ -2,11 +2,15 @@
 from time import perf_counter
 
 from flask import Response, g, request
-from prometheus_client import Counter, Gauge, Histogram, CONTENT_TYPE_LATEST, generate_latest
+from prometheus_client import Counter, Gauge, Histogram, CollectorRegistry, CONTENT_TYPE_LATEST, generate_latest, disable_created_metrics
 
-REQUESTS = Counter('http_requests_total', 'Solicitudes HTTP', ['node', 'method', 'endpoint', 'status'])
-INPROGRESS = Gauge('http_requests_inprogress', 'Solicitudes en curso', ['node'])
-DURATION = Histogram('http_request_duration_seconds', 'Duración interna de Flask', ['node'])
+# Exponer solo las tres métricas del laboratorio.
+disable_created_metrics()
+REGISTRY = CollectorRegistry()
+
+REQUESTS = Counter('http_requests_total', 'Solicitudes HTTP', ['node', 'method', 'endpoint', 'status'], registry=REGISTRY)
+INPROGRESS = Gauge('http_requests_inprogress', 'Solicitudes en curso', ['node'], registry=REGISTRY)
+DURATION = Histogram('http_request_duration_seconds', 'Duración interna de Flask', ['node'], registry=REGISTRY)
 
 
 def instrumentar(app, node):
@@ -41,4 +45,4 @@ def instrumentar(app, node):
 
     @app.get('/metrics')
     def metrics():
-        return Response(generate_latest(), content_type=CONTENT_TYPE_LATEST)
+        return Response(generate_latest(REGISTRY), content_type=CONTENT_TYPE_LATEST)
