@@ -39,7 +39,7 @@ def consultar(url, numero):
             try:
                 data = json.loads(body)
                 if isinstance(data, dict):
-                    row['nodo'] = data.get('servidor', row['nodo'])
+                    row['nodo'] = data.get('nodo', row['nodo'])
             except (ValueError, UnicodeError):
                 pass
     except (URLError, OSError, TimeoutError, HTTPException) as exc:
