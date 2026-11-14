@@ -1,62 +1,79 @@
-# Entrega 4: observabilidad con Prometheus y Grafana
+# Laboratorio de observabilidad de la Entrega 4
 
-El laboratorio conserva `flask1` (S1), `flask2` (S2), `flask3` (S3), NGINX y la red `lab_red`. Agrega Prometheus y Grafana: seis contenedores en total. NGINX distribuye por round-robin hacia Flask:5000 y reintenta errores de conexión con otro upstream. Prometheus consulta directamente `flask1:5000/metrics`, `flask2:5000/metrics` y `flask3:5000/metrics` cada 5 segundos. No hay puertos Flask publicados.
+Seguir [la guía original del profesor](Guia_Estudiante_Entrega4.docx). Este repositorio contiene el código y las configuraciones de partida; `resultados/` comienza vacío para registrar únicamente las pruebas que realices.
 
-NGINX usa el DNS interno de Docker (`127.0.0.11`), una zona compartida y `resolve` para actualizar las IP de Flask sin reiniciar el balanceador. Conserva round-robin. El DNS se renueva cada 5s; detectar un fallo y retornar al nodo recuperado puede requerir unos segundos. El tiempo de conexión a una réplica se limita a 1s para reintentar pronto en otra cuando una IP detenida no responde; no limita la duración del trabajo en `/work`.
+## Fase 1. Preparar y verificar la topología
 
-## Inicio desde Windows (PowerShell)
+Requisitos: Docker con Compose v2 (en Windows, Docker Desktop con contenedores Linux), Python 3.10+, navegador y puertos locales 8080, 9090 y 3000 disponibles. Internet se necesita inicialmente para descargar imágenes y paquetes. Los scripts Python usan la biblioteca estándar; la imagen instala las dependencias de `Servidor/requirements.txt`.
 
-Requisitos: Docker Desktop iniciado con contenedores Linux y Python 3.10+ para los scripts. Desde la raíz:
+La topología contiene `flask1`, `flask2`, `flask3`, `nginx`, `prometheus` y `grafana` en la red `lab_red`. NGINX distribuye round-robin a Flask:5000; solo NGINX, Prometheus y Grafana publican puertos en localhost.
+
+Desde la raíz, copiar `.env.example` únicamente si todavía no existe `.env`, editar la contraseña `GRAFANA_ADMIN_PASSWORD` y ejecutar el inicio.
+
+Windows (PowerShell):
 
 ```powershell
-# Solo si todavía no existe Servidor/.env:
 Copy-Item Servidor/.env.example Servidor/.env
 notepad Servidor/.env
-# Definir GRAFANA_ADMIN_PASSWORD, guardar y cerrar el editor.
 .\Servidor\iniciar_windows.ps1
+```
+
+Linux/macOS:
+
+```bash
+cp -n Servidor/.env.example Servidor/.env
+# Editar Servidor/.env y definir GRAFANA_ADMIN_PASSWORD
+bash Servidor/iniciar_linux.sh
+```
+
+No subir `.env` ni contraseñas. En los comandos siguientes usar `python3` si corresponde en Linux.
+
+```bash
+docker compose -f Servidor/compose.yaml ps
 python scripts/validar_entorno.py
 ```
 
-No sobrescribir `.env` existente. En Linux usar `python3` si corresponde. En PowerShell sustituir `sleep 10`/`sleep 15` por `Start-Sleep -Seconds 10`/`Start-Sleep -Seconds 15`.
+Abrir [NGINX](http://localhost:8080), [Prometheus](http://localhost:9090/targets) y [Grafana](http://localhost:3000). En Grafana usar `admin` y la contraseña de `.env`. Esperar unos 15 segundos para las primeras recolecciones antes de repetir la validación.
 
-## Inicio en Linux/macOS
-
-Requisitos: Docker con Compose v2, Python 3.10+ y acceso a las imágenes Docker. Desde la raíz del proyecto:
+Para detener el proyecto conservando los datos:
 
 ```bash
-cd Servidor
-# Solo si todavía no existe .env:
-cp -n .env.example .env
-nano .env  # asignar GRAFANA_ADMIN_PASSWORD; no subir .env al repositorio
-bash iniciar_linux.sh
-docker compose logs --tail=30
-cd ..
-python scripts/validar_entorno.py
+docker compose -f Servidor/compose.yaml stop
 ```
 
-Esperar unos 15 segundos al primer arranque y repetir la validación si los targets todavía no aparecen. Los scripts solo requieren la biblioteca estándar; Flask y prometheus_client se instalan dentro de la imagen.
+Los volúmenes `lab-nginx_prometheus_data` y `lab-nginx_grafana_data` conservan métricas y dashboards entre arranques. Si ya contienen datos, el inicio no los reinicia: acordar su borrado antes de comenzar si se necesita un almacenamiento vacío.
 
-Acceso local: aplicación <http://localhost:8080>, Prometheus <http://localhost:9090> (Status → Target health) y Grafana <http://localhost:3000> (usuario `admin`, contraseña de `.env`). Grafana provisiona exclusivamente la fuente `Prometheus`, URL interna `http://prometheus:9090`, intervalo 5s. En Connections → Data sources → Prometheus comprobar **Save & test**.
+## Fase 2. Revisar la instrumentación y comprobar Flask
 
-Los volúmenes `prometheus_data` y `grafana_data` conservan métricas y dashboards guardados manualmente. Para parar: `cd Servidor && docker compose down`; no usar `down -v`. La contraseña de `.env` inicializa Grafana solo al crear su almacenamiento por primera vez; cambiarla después requiere la administración de Grafana.
+Inspeccionar `Servidor/app.py` y `Servidor/metrics.py`. La instrumentación ya está preparada: identificar y explicar Counter `http_requests_total` (node, method, endpoint, status), Gauge `http_requests_inprogress` y Histogram `http_request_duration_seconds` (node). `/metrics` no suma tráfico. Las rutas desconocidas se agrupan en `unmatched` y los métodos desconocidos en `OTHER`.
 
-## Endpoints e instrumentación
-
-`/` siempre devuelve JSON con `nodo`, incluso desde el navegador. Se conservan calculadora, pruebas, monitor y APIs. `/health` devuelve JSON de estado. `/work?ms=50` espera entre 0 y 10000 ms; `/error?code=500` devuelve errores intencionales entre 400 y 599. Parámetros inválidos responden 400. `/metrics` expone Prometheus.
-
-`http_requests_total` tiene etiquetas `node`, `method`, `endpoint` (plantilla de ruta o `unmatched`) y `status`. Métodos desconocidos se agrupan en `OTHER`. `http_requests_inprogress` y `http_request_duration_seconds` tienen etiqueta `node`. Las consultas de `/metrics` no cuentan como tráfico. Los hooks de cierre registran también errores y liberan la concurrencia. Cada contenedor ejecuta un único proceso Flask con hilos, como en la Entrega 3.
+Comprobar las rutas desde localhost:
 
 ```bash
-curl -s http://127.0.0.1:8080/
-curl -s http://127.0.0.1:8080/health
-curl -s 'http://127.0.0.1:8080/work?ms=50'
-curl -i 'http://127.0.0.1:8080/error?code=500'
-curl -s http://127.0.0.1:8080/metrics
+curl -s http://localhost:8080/
+curl -s http://localhost:8080/health
+curl -s "http://localhost:8080/work?ms=50"
+curl -i "http://localhost:8080/error?code=500"
+docker compose -f Servidor/compose.yaml exec flask1 python -c "import urllib.request; print(urllib.request.urlopen('http://localhost:5000/metrics').read().decode()[:500])"
 ```
 
-El último comando muestra una réplica elegida por NGINX; Prometheus recolecta las tres directamente. La latencia interna del histograma comprende procesamiento Flask, sin red ni espera del cliente; el CSV mide extremo a extremo, incluida lectura de respuesta. No son medidas equivalentes. `up=0` significa que Prometheus no pudo recolectar esa instancia, mientras que una respuesta 200 de `/health` por NGINX indica disponibilidad global. Los errores de conexión/502 de NGINX no aparecen en contadores Flask si nunca llegan a Flask; se observan en los CSV y logs de NGINX.
+En PowerShell usar `curl.exe` si `curl` es un alias. `/` debe responder JSON con `nodo`, incluso en navegador. Se conservan `/calculadora`, `/pruebas`, `/monitor`, `/api/estado` y `/api/calcular` de la Entrega 3.
 
-## Dos dashboards manuales
+## Fase 3. Recolectar métricas con Prometheus
+
+Revisar `Servidor/prometheus.yml`: job `flask_app`, intervalo de 5 segundos y targets `flask1:5000`, `flask2:5000`, `flask3:5000`, ruta `/metrics`. Comprobar los tres targets en <http://localhost:9090/targets>.
+
+Para observar tráfico sostenido usar el escenario de 480 solicitudes a 8 RPS de la prueba 5. Tras varias recolecciones, consultar en Prometheus e interpretar las unidades:
+
+```promql
+up{job="flask_app"}
+sum by (node) (rate(http_requests_total[1m]))
+1000 * histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[2m])))
+```
+
+Si se ejecuta ese escenario aquí, conservar su CSV para la prueba 5 o elegir otro nombre al repetirlo.
+
+## Fase 4. Construir los dashboards manualmente
 
 Usar la fuente aprovisionada **Prometheus** (`http://prometheus:9090`). Crear ambos dashboards desde cero, exactamente cuatro paneles cada uno, sin importar JSON. Seleccionar Prometheus y modo Code; agregar las consultas de cada fila al mismo panel. Guardar con rango de 15 minutos y refresco de 5 segundos.
 
@@ -80,9 +97,9 @@ Usar la fuente aprovisionada **Prometheus** (`http://prometheus:9090`). Crear am
 
 Usar consultas Range salvo el Stat, mínimo 0 y sin apilar. En Stat y State timeline mapear 0 a DOWN rojo y 1 a UP verde. No conectar valores ausentes ni convertirlos en UP. Esperar al menos dos scrapes con tráfico antes de interpretar tasas. Un panel vacío no demuestra caída. El muestreo de 5 segundos puede omitir picos breves de concurrencia. Correlacionar la línea temporal con eventos.csv y la disponibilidad global con el CSV del monitor.
 
-## Diez experimentos (desde la raíz)
+## Fase 5. Ejecutar las diez pruebas e interpretar resultados
 
-Los CSV se crean con ejecuciones reales en `resultados/`; elegir un nombre nuevo si ya existe. La tasa limita los inicios globales; no garantiza alcanzar esa tasa si los hilos o el servidor se saturan. Throughput = intentos completados / tiempo entre primer inicio y último fin; P95 usa rango más próximo. El resumen incluye latencias de todos los intentos, también fallidos. Los CSV incluyen `exitosa` (1 o 0); los antiguos sin esa columna siguen siendo analizables: se calculan los éxitos usando HTTP y errores de conexión. `disponibilidad_observada_pct` = 100 × éxitos / intentos; para el monitor de `/health` representa disponibilidad global observada de NGINX, no disponibilidad temporal continua ni porcentaje de targets UP. Para el ensayo `/error`, representa solo la proporción de respuestas exitosas de ese ensayo. No mezclar CSV de eventos con los de solicitudes.
+Ejecutar desde la raíz. Usar nombres nuevos si los CSV ya existen. Por cada prueba formular una hipótesis, ejecutar el procedimiento, conservar CSV y capturas propias y escribir la interpretación y conclusión. El archivo de eventos se genera al detener/iniciar instancias; no pasarlo al analizador de solicitudes.
 
 1. Infraestructura y seis contenedores:
    ```bash
@@ -139,4 +156,4 @@ Los CSV se crean con ejecuciones reales en `resultados/`; elegir un nombre nuevo
     python scripts/analizar_resultados.py resultados/normal.csv resultados/rps12.csv resultados/fallo.csv resultados/recuperacion.csv resultados/disponibilidad.csv
     python scripts/analizar_resultados.py resultados/latencia50.csv resultados/latencia200.csv resultados/hilos1.csv resultados/hilos20.csv resultados/errores.csv
     ```
-    Registrar total, éxitos, errores HTTP, errores de conexión, reparto S1/S2/S3, promedio, P95, throughput y porcentaje de disponibilidad observado en el monitor. Los cuatro escenarios usan cargas distintas: describir esta diferencia al interpretar sus cifras. Conservar horas y capturas de ambos dashboards. Los resultados anteriores se conservan en `resultados/historicos/`, separados de las pruebas oficiales nuevas en `resultados/`.
+    Registrar total, éxitos, errores HTTP, errores de conexión, reparto S1/S2/S3, promedio, P95, throughput y porcentaje de disponibilidad observado en el monitor. Los cuatro escenarios usan cargas distintas: describir esta diferencia al interpretar sus cifras. Conservar horas y capturas de ambos dashboards.

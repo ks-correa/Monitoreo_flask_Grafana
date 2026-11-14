@@ -1,7 +1,0 @@
-﻿NAME                     IMAGE                    COMMAND                  SERVICE      CREATED         STATUS          PORTS
-lab-nginx-flask1-1       lab-flask:v1             "python app.py"          flask1       4 minutes ago   Up 22 seconds   5000/tcp
-lab-nginx-flask2-1       lab-flask:v1             "python app.py"          flask2       4 minutes ago   Up 4 minutes    5000/tcp
-lab-nginx-flask3-1       lab-flask:v1             "python app.py"          flask3       4 minutes ago   Up 4 minutes    5000/tcp
-lab-nginx-grafana-1      grafana/grafana:12.1.0   "/run.sh"                grafana      17 hours ago    Up 4 minutes    127.0.0.1:3000->3000/tcp
-lab-nginx-nginx-1        nginx:1.28.0-alpine      "/docker-entrypoint.…"   nginx        17 hours ago    Up 4 minutes    127.0.0.1:8080->80/tcp
-lab-nginx-prometheus-1   prom/prometheus:v3.5.0   "/bin/prometheus --c…"   prometheus   17 hours ago    Up 4 minutes    127.0.0.1:9090->9090/tcp
