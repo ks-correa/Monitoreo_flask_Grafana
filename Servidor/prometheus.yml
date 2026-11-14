@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 5s
+  scrape_timeout: 4s
+
+scrape_configs:
+  - job_name: flask_app
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['flask1:5000', 'flask2:5000', 'flask3:5000']
