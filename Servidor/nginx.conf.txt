@@ -2,9 +2,12 @@
 # Grupo de instancias Flask.
 # Nginx distribuye las solicitudes mediante Round Robin.
 upstream servidores_flask {
-    server flask1:5000;
-    server flask2:5000;
-    server flask3:5000;
+    zone servidores_flask 64k;
+    # DNS interno de Docker: actualizar IPs sin reiniciar NGINX.
+    resolver 127.0.0.11 valid=5s ipv6=off;
+    server flask1:5000 resolve;
+    server flask2:5000 resolve;
+    server flask3:5000 resolve;
 }
 
 server {
@@ -15,6 +18,8 @@ server {
     location / {
         # Enviar las solicitudes al grupo Flask.
         proxy_pass http://servidores_flask;
+        # Reintentar pronto en otra réplica si la IP detenida no responde.
+        proxy_connect_timeout 1s;
 
         # Conservar información de la petición original.
         proxy_set_header Host $host;

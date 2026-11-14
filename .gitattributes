@@ -1,0 +1,2 @@
+# Mantener finales de línea compatibles con Bash al clonar desde Windows.
+*.sh text eol=lf

@@ -6,12 +6,13 @@ import statistics
 import time
 from collections import Counter
 from datetime import datetime
+from http.client import HTTPException
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, ProxyHandler, build_opener
 
 ROOT = Path(__file__).resolve().parents[1]
-FIELDS = ['fecha_hora', 'solicitud', 'nodo', 'status', 'latencia_ms', 'error_conexion', 'inicio_epoch', 'fin_epoch']
+FIELDS = ['fecha_hora', 'solicitud', 'nodo', 'status', 'latencia_ms', 'error_conexion', 'inicio_epoch', 'fin_epoch', 'exitosa']
 
 
 class SinRedireccion(HTTPRedirectHandler):
@@ -41,10 +42,11 @@ def consultar(url, numero):
                     row['nodo'] = data.get('servidor', row['nodo'])
             except (ValueError, UnicodeError):
                 pass
-    except (URLError, OSError, TimeoutError) as exc:
+    except (URLError, OSError, TimeoutError, HTTPException) as exc:
         row['error_conexion'] = str(exc)
     row['latencia_ms'] = round((time.perf_counter() - reloj) * 1000, 3)
     row['fin_epoch'] = time.time()
+    row['exitosa'] = int(200 <= row['status'] < 400 and not row['error_conexion'])
     return row
 
 
@@ -69,6 +71,7 @@ def resumir(rows):
     connections = sum(bool(r['error_conexion']) for r in rows)
     elapsed = max(float(r['fin_epoch']) for r in rows) - min(float(r['inicio_epoch']) for r in rows)
     print(json.dumps(dict(total=len(rows), exitosas=successes, errores_http=http_errors,
+                          disponibilidad_observada_pct=round(100 * successes / len(rows), 3),
                           errores_conexion=connections, errores=len(rows)-successes,
                           distribucion=dict(Counter(r['nodo'] for r in rows if r['nodo'])),
                           latencia_promedio_ms=round(statistics.mean(latencies), 3),
